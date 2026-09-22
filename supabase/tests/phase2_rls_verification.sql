@@ -1,0 +1,15 @@
+-- Manual verification script for a local/staging Supabase database.
+-- Run each assertion as the matching authenticated JWT (not the service role).
+-- Expected outcomes:
+-- 1. Academy Admin A can select rows only where academy_id = Academy A.
+-- 2. Academy Admin A cannot insert a Team/Player with Academy B's id.
+-- 3. Academy Admin A cannot update profiles.platform_role or profiles.active_academy_id.
+-- 4. A platform super_admin can read both academies.
+-- 5. An ordinary authenticated user can execute create_academy only for themselves;
+--    the resulting membership must have role owner and user_id = auth.uid().
+
+-- Example isolation probes (replace UUIDs and execute under Academy Admin A's JWT):
+-- select * from public.players where academy_id = '<academy-b-uuid>'; -- zero rows
+-- insert into public.teams (academy_id, name) values ('<academy-b-uuid>', 'Forbidden'); -- RLS error
+-- update public.profiles set platform_role = 'super_admin' where id = auth.uid(); -- permission denied
+-- update public.profiles set active_academy_id = '<academy-b-uuid>' where id = auth.uid(); -- permission denied
